@@ -128,6 +128,7 @@ public class GriefPrevention extends JavaPlugin
 
     public int config_claims_initialBlocks;                            //the number of claim blocks a new player starts with
     public double config_claims_abandonReturnRatio;                 //the portion of claim blocks returned to a player when a claim is abandoned
+    public double config_claims_overLimit_abandonReturnRatio;
     public int config_claims_blocksAccruedPerHour_default;            //how many additional blocks players get each hour of play (can be zero) without any special permissions
     public int config_claims_maxAccruedBlocks_default;                //the limit on accrued blocks (over time) for players without any special permissions.  doesn't limit purchased or admin-gifted blocks
     public int config_claims_maxDepth;                                //limit on how deep claims can go
@@ -546,6 +547,7 @@ public class GriefPrevention extends JavaPlugin
         this.config_claims_maxAccruedBlocks_default = config.getInt("GriefPrevention.Claims.MaxAccruedBlocks", 80000);
         this.config_claims_maxAccruedBlocks_default = config.getInt("GriefPrevention.Claims.Max Accrued Claim Blocks.Default", this.config_claims_maxAccruedBlocks_default);
         this.config_claims_abandonReturnRatio = config.getDouble("GriefPrevention.Claims.AbandonReturnRatio", 1.0D);
+        this.config_claims_overLimit_abandonReturnRatio = config.getDouble("GriefPrevention.Claims.OverLimit-AbandonReturnRatio");
         this.config_claims_automaticClaimsForNewPlayersRadius = config.getInt("GriefPrevention.Claims.AutomaticNewPlayerClaimsRadius", 4);
         this.config_claims_automaticClaimsForNewPlayersRadiusMin = Math.max(0, Math.min(this.config_claims_automaticClaimsForNewPlayersRadius,
                 config.getInt("GriefPrevention.Claims.AutomaticNewPlayerClaimsRadiusMinimum", 0)));
@@ -1142,14 +1144,25 @@ public class GriefPrevention extends JavaPlugin
                 return true;
             }
 
-            if (this.config_claims_abandonReturnRatio != 1.0D)
-            {
+            if (playerData.getBonusClaimBlocks() > this.config_claims_maxAccruedBlocks_default) {
                 //adjust claim blocks
                 for (Claim claim : playerData.getClaims())
                 {
-                    playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_abandonReturnRatio))));
+                    playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_overLimit_abandonReturnRatio))));
                 }
             }
+            else {
+                if (this.config_claims_abandonReturnRatio != 1.0D)
+                {
+                    //adjust claim blocks
+                    for (Claim claim : playerData.getClaims())
+                    {
+                        playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_abandonReturnRatio))));
+                    }
+                }
+            }
+
+
 
 
             //delete them
@@ -2334,6 +2347,20 @@ public class GriefPrevention extends JavaPlugin
         {
             //delete it
             this.dataStore.deleteClaim(claim, true, false);
+
+            if (playerData.getBonusClaimBlocks() > this.config_claims_maxAccruedBlocks_default) {
+                if (this.config_claims_overLimit_abandonReturnRatio != 1.0D && claim.parent == null && claim.ownerID.equals(playerData.playerID))
+                {
+                    playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_overLimit_abandonReturnRatio))));
+                }
+            }
+            else {
+                //adjust claim blocks when abandoning a top level claim
+                if (this.config_claims_abandonReturnRatio != 1.0D && claim.parent == null && claim.ownerID.equals(playerData.playerID))
+                {
+                    playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_abandonReturnRatio))));
+                }
+            }
 
             //adjust claim blocks when abandoning a top level claim
             if (this.config_claims_abandonReturnRatio != 1.0D && claim.parent == null && claim.ownerID.equals(playerData.playerID))
