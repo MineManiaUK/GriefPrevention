@@ -283,7 +283,7 @@ public class BlockEventHandler implements Listener
                 if (claim != null)
                 {
                     playerData.lastClaim = claim;
-                    Supplier<String> noContainerReason = claim.checkPermission(player, ClaimPermission.Inventory, placeEvent);
+                    Supplier<String> noContainerReason = claim.checkPermission(player, ClaimPermission.Container, placeEvent);
                     if (noContainerReason == null)
                         return;
 
@@ -802,7 +802,7 @@ public class BlockEventHandler implements Listener
             return;
         }
 
-        if (!GriefPrevention.instance.config_fireSpreads && igniteEvent.getCause() != IgniteCause.FLINT_AND_STEEL && igniteEvent.getCause() != IgniteCause.LIGHTNING)
+        if (!GriefPrevention.instance.config_fireSpreads && igniteEvent.getCause() != IgniteCause.FLINT_AND_STEEL && igniteEvent.getCause() != IgniteCause.LIGHTNING && igniteEvent.getCause() != IgniteCause.FIREBALL)
         {
             igniteEvent.setCancelled(true);
         }
@@ -1154,7 +1154,7 @@ public class BlockEventHandler implements Listener
             return;
         }
 
-        Supplier<String> allowContainer = claim.checkPermission(shooter, ClaimPermission.Inventory, event);
+        Supplier<String> allowContainer = claim.checkPermission(shooter, ClaimPermission.Container, event);
 
         if (allowContainer != null)
         {

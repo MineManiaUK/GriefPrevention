@@ -22,6 +22,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.griefprevention.commands.ClaimCommand;
 import com.griefprevention.metrics.MetricsHandler;
+import com.griefprevention.platform.knockback.KnockbackProtectionListener;
 import com.griefprevention.protection.InteractionProtectionHandler;
 import com.griefprevention.protection.ProtectionHelper;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -372,6 +373,9 @@ public class GriefPrevention extends JavaPlugin
         //combat/damage-specific entity events
         entityDamageHandler = new EntityDamageHandler(this.dataStore, this);
         pluginManager.registerEvents(entityDamageHandler, this);
+
+        //knockback protection - handles melee, projectile, and other player-caused knockback in claims
+        new KnockbackProtectionListener(this.dataStore, this).register(this);
 
         //special interaction-related events
         pluginManager.registerEvents(new InteractionProtectionHandler(), this);
@@ -1566,7 +1570,7 @@ public class GriefPrevention extends JavaPlugin
             //requires exactly one parameter, the other player's name
             if (args.length != 1) return false;
 
-            this.handleTrustCommand(player, ClaimPermission.Inventory, args[0]);
+            this.handleTrustCommand(player, ClaimPermission.Container, args[0]);
 
             return true;
         }
@@ -2546,7 +2550,7 @@ public class GriefPrevention extends JavaPlugin
         {
             permissionDescription = this.dataStore.getMessage(Messages.AccessPermission);
         }
-        else //ClaimPermission.Inventory
+        else //ClaimPermission.Container
         {
             permissionDescription = this.dataStore.getMessage(Messages.ContainersPermission);
         }
